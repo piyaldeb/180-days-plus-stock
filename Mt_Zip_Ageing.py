@@ -252,8 +252,8 @@ def paste_to_google_sheet(df, sheet_key, worksheet_name):
     # Paste data
     set_with_dataframe(worksheet, df)
 
-    # tz = pytz.timezone("Asia/Dhaka")
-    # timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
+    tz = pytz.timezone("Asia/Dhaka")
+    timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
 
     # # Put timestamp in column after last df column (safe up to Z)
     # last_col_idx = min(26, df.shape[1])  # max 26 (A-Z)
