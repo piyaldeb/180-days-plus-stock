@@ -1,0 +1,50 @@
+name: Run Python Scripts Twice Daily
+
+# Schedule to run at 3 AM and 3 PM UTC
+on:
+  schedule:
+    - cron: '0 3,15 * * *'
+  workflow_dispatch: # allows manual trigger
+
+jobs:
+  run-python-scripts:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout the repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Set up Python
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # 3️⃣ Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pandas python-dotenv pytz gspread gspread-dataframe google-auth
+
+      # 4️⃣ Create .env file from secrets
+      - name: Create .env
+        run: |
+          echo "ODOO_URL=${{ secrets.ODOO_URL }}" >> .env
+          echo "ODOO_DB=${{ secrets.ODOO_DB }}" >> .env
+          echo "ODOO_USERNAME=${{ secrets.ODOO_USERNAME }}" >> .env
+          echo "ODOO_PASSWORD=${{ secrets.ODOO_PASSWORD }}" >> .env
+          echo "GOOGLE_CREDS_BASE64=${{ secrets.GOOGLE_CREDS_BASE64 }}" >> .env
+
+      # 5️⃣ Decode Google credentials
+      - name: Decode Google credentials
+        run: |
+          echo $GOOGLE_CREDS_BASE64 | base64 --decode > gservice_account.json
+          export GOOGLE_APPLICATION_CREDENTIALS=$PWD/gservice_account.json
+
+      # 6️⃣ Run your Python scripts
+      - name: Run Mt_Zip_Ageing.py
+        run: python Mt_Zip_Ageing.py
+
+      - name: Run Mt_Zip.py
+        run: python Mt_Zip.py
