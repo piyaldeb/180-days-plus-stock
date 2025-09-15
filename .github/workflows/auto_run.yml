@@ -63,5 +63,5 @@ jobs:
       - name: Run Mt_Zip_Ageing.py
         run: python Mt_Zip_Ageing.py
 
-      - name: Run Mt_Zip.py
-        run: python Mt_Zip.py
+      - name: Mt_Zip_db.py
+        run: python Mt_Zip_db.py
