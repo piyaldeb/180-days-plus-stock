@@ -39,8 +39,8 @@ jobs:
       # 5️⃣ Decode Google credentials
       - name: Decode Google credentials
         run: |
-          echo $GOOGLE_CREDS_BASE64 | base64 --decode > gservice_account.json
-          export GOOGLE_APPLICATION_CREDENTIALS=$PWD/gservice_account.json
+          echo $GOOGLE_CREDS_BASE64 | base64 --decode > service_account.json
+          export GOOGLE_APPLICATION_CREDENTIALS=$PWD/service_account.json
 
       # 6️⃣ Run your Python scripts
       - name: Run Mt_Zip_Ageing.py
