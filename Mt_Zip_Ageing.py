@@ -24,7 +24,12 @@ COMPANIES = {
 }
 
 # FROM_DATE = datetime.today().replace(day=1).strftime("%Y-%m-%d")
-TO_DATE = date.today().strftime("%Y-%m-%d")
+import calendar
+
+today = date.today()
+first_day_this_month = today.replace(day=1)
+last_day_prev_month = first_day_this_month - timedelta(days=1)
+TO_DATE = last_day_prev_month.strftime("%Y-%m-%d")
 DOWNLOAD_DIR = os.path.join(os.getcwd(), "download")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
