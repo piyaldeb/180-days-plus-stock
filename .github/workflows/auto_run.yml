@@ -60,8 +60,8 @@ jobs:
           fi
 
       # 6️⃣ Run your Python scripts
-      - name: Run Mt_Zip_Ageing.py
-        run: python Mt_Zip_Ageing.py
+      - name: Run Closing.py
+        run: python Closing.py
 
-      - name: Mt_Zip_db.py
-        run: python Mt_Zip_db.py
+      - name: Current_Stock.py
+        run: python Current_Stock.py
