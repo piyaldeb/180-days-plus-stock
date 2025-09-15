@@ -226,11 +226,11 @@ if __name__ == "__main__":
                 # ========= GOOGLE SHEETS ==========
                 try:
                     if cid == 1:  # Zipper
-                        client = gspread.service_account(filename="credential.json")
+                        client = gspread.service_account(filename="service_account")
                         sheet = client.open_by_key("1j37Y6g3pnMWtwe2fjTe1JTT32aRLS0Z1YPjl3v657Cc")
                         worksheet = sheet.worksheet("Current Stock")
                     elif cid == 3:  # Metal Trims
-                        client = gspread.service_account(filename="gcreds.json")
+                        client = gspread.service_account(filename="service_account")
                         sheet = client.open_by_key("1j37Y6g3pnMWtwe2fjTe1JTT32aRLS0Z1YPjl3v657Cc")
                         worksheet = sheet.worksheet("Current Stock - MT")
                     else:
