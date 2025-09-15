@@ -19,8 +19,9 @@ USERNAME = os.getenv("ODOO_USERNAME")
 PASSWORD = os.getenv("ODOO_PASSWORD")
 
 COMPANIES = {
-    1: "Zipper",
+    
     3: "Metal Trims",
+    1: "Zipper"
 }
 
 # FROM_DATE = datetime.today().replace(day=1).strftime("%Y-%m-%d")

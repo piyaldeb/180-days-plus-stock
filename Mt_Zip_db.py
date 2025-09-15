@@ -147,8 +147,8 @@ def fetch_opening_closing(company_id, cname):
         "product_uom": {"fields": {"display_name": {}}},        # Unit
         "partner_id": {"fields": {"display_name": {}}},         # Vendor
         "po_number": {},                                        # PO
-        "product_type": {},                                     # Product Type
-        "item_category": {},                                    # Item Type
+        "product_type": {"fields": {"display_name": {}}},                                     # Product Type
+        "item_category": {"fields": {"display_name": {}}},                                    # Item Type
     }
 
     payload = {
