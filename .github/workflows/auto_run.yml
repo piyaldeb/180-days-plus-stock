@@ -36,11 +36,28 @@ jobs:
           echo "ODOO_PASSWORD=${{ secrets.ODOO_PASSWORD }}" >> .env
           echo "GOOGLE_CREDS_BASE64=${{ secrets.GOOGLE_CREDS_BASE64 }}" >> .env
 
-      # 5️⃣ Decode Google credentials
       - name: Decode Google credentials
+        env:
+            GOOGLE_CREDS_BASE64: ${{ secrets.GOOGLE_CREDS_BASE64 }}
+            GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/service_account.json
         run: |
-          echo $GOOGLE_CREDS_BASE64 | base64 --decode > service_account.json
-          export GOOGLE_APPLICATION_CREDENTIALS=$PWD/service_account.json
+            echo "$GOOGLE_CREDS_BASE64" | base64 --decode > service_account.json
+
+      # 5️⃣ Validate .env and service_account.json
+      - name: Validate environment files
+        run: |
+          if [ ! -f ".env" ]; then
+            echo ".env file is missing!"; exit 1;
+          fi
+          if [ ! -s ".env" ]; then
+            echo ".env file is empty!"; exit 1;
+          fi
+          if [ ! -f "service_account.json" ]; then
+            echo "service_account.json is missing!"; exit 1;
+          fi
+          if ! grep -q '"type": "service_account"' service_account.json; then
+            echo "service_account.json is malformed!"; exit 1;
+          fi
 
       # 6️⃣ Run your Python scripts
       - name: Run Mt_Zip_Ageing.py
