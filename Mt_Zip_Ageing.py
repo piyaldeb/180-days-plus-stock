@@ -1,6 +1,6 @@
 import requests
 import pandas as pd
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from dotenv import load_dotenv
 import os
 import pytz
