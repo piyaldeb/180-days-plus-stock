@@ -239,10 +239,10 @@ if __name__ == "__main__":
                     if worksheet is not None and not df.empty:
                         worksheet.batch_clear(["A:T"])
                         set_with_dataframe(worksheet, df)
-                        local_tz = pytz.timezone("Asia/Dhaka")
-                        local_time = datetime.now(local_tz).strftime("%Y-%m-%d %H:%M:%S")
-                        worksheet.update("W2", [[f"{local_time}"]])
-                        print(f"✅ Data pasted & timestamp updated: {local_time}")
+                        # local_tz = pytz.timezone("Asia/Dhaka")
+                        # local_time = datetime.now(local_tz).strftime("%Y-%m-%d %H:%M:%S")
+                        # worksheet.update("W2", [[f"{local_time}"]])
+                        # print(f"✅ Data pasted & timestamp updated: {local_time}")
 
                 except Exception as e:
                     print(f"❌ Error while pasting to Google Sheets: {e}")
