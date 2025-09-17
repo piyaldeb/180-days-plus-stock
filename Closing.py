@@ -77,11 +77,11 @@ LABELS = {
 }
 
 # ========= LOGIN ==========
+
 def login():
     global USER_ID
     payload = {"jsonrpc": "2.0", "params": {"db": DB, "login": USERNAME, "password": PASSWORD}}
-    r = session.post(f"{ODOO_URL}/web/session/authenticate", json=payload)
-    r.raise_for_status()
+    r = retry_request(session.post, f"{ODOO_URL}/web/session/authenticate", json=payload)
     result = r.json().get("result")
     if result and "uid" in result:
         USER_ID = result["uid"]
@@ -89,6 +89,7 @@ def login():
         return result
     else:
         raise Exception("❌ Login failed")
+
 
 # ========= SWITCH COMPANY ==========
 def switch_company(company_id):
@@ -104,7 +105,8 @@ def switch_company(company_id):
             "kwargs": {"context": {"allowed_company_ids": [company_id], "company_id": company_id}},
         },
     }
-    r = session.post(f"{ODOO_URL}/web/dataset/call_kw", json=payload)
+    r = retry_request(session.post, f"{ODOO_URL}/web/dataset/call_kw", json=payload)
+
     r.raise_for_status()
     if "error" in r.json():
         print(f"❌ Failed to switch to company {company_id}: {r.json()['error']}")
@@ -141,7 +143,7 @@ def create_ageing_wizard(company_id, from_date, to_date):
             },
         },
     }
-    r = session.post(f"{ODOO_URL}/web/dataset/call_kw/stock.forecast.report/web_save", json=payload)
+    r = retry_request(session.post, f"{ODOO_URL}/web/dataset/call_kw/stock.forecast.report/web_save", json=payload)
     r.raise_for_status()
     result = r.json().get("result", [])
     if isinstance(result, list) and result:
@@ -166,7 +168,8 @@ def compute_ageing(company_id, wizard_id):
                                    "company_id": company_id}},
         },
     }
-    r = session.post(f"{ODOO_URL}/web/dataset/call_button", json=payload)
+    r = retry_request(session.post, f"{ODOO_URL}/web/dataset/call_button", json=payload)
+
     r.raise_for_status()
     result = r.json()
     if "error" in result:
@@ -196,7 +199,8 @@ def fetch_ageing(company_id, cname, wizard_id):
             },
         },
     }
-    r = session.post(f"{ODOO_URL}/web/dataset/call_kw", json=payload)
+    r = retry_request(session.post, f"{ODOO_URL}/web/dataset/call_kw", json=payload)
+
     r.raise_for_status()
     try:
         data = r.json()["result"]["records"]
@@ -214,6 +218,27 @@ def fetch_ageing(company_id, cname, wizard_id):
     except Exception:
         print(f"❌ {cname}: Failed to parse ageing report:", r.text[:200])
         return []
+import time
+from requests.exceptions import RequestException
+
+def retry_request(method, url, max_retries=3, backoff=3, **kwargs):
+    """
+    Wrapper for requests with retry logic.
+    Retries up to `max_retries` times with `backoff` seconds delay.
+    """
+    for attempt in range(1, max_retries + 1):
+        try:
+            r = method(url, **kwargs)
+            r.raise_for_status()
+            return r
+        except RequestException as e:
+            print(f"⚠️ Attempt {attempt} failed: {e}")
+            if attempt < max_retries:
+                print(f"⏳ Retrying in {backoff} seconds...")
+                time.sleep(backoff)
+            else:
+                print("❌ All retry attempts failed.")
+                raise
 
 # ========= MAIN ==========
 if __name__ == "__main__":
