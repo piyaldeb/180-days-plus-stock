@@ -31,7 +31,7 @@ today = date.today()
 
 # ========= GITHUB ENV ==========
 FROM_DATE = os.getenv("FROM_DATE")  # from GitHub Actions
-TO_DATE = date.today().strftime("%d/%m/%Y") 
+TO_DATE = date.today().strftime("%Y-%m-%d")
 if not TO_DATE:
     TO_DATE = today.isoformat()
 if not FROM_DATE:
