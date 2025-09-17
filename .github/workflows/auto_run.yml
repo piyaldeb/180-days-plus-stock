@@ -1,9 +1,11 @@
-name: Run Python Scripts Twice Daily
+name: Run Python Scripts Multiple Times Daily
 
-# Schedule to run at 3 AM and 3 PM UTC
+# Schedule to run at 3 AM, 11:50 AM, and 3 PM UTC
 on:
   schedule:
-    - cron: '0 3,15 * * *'
+    - cron: '0 3 * * *'      # 03:00 UTC
+    - cron: '50 11 * * *'    # 11:50 UTC
+    - cron: '0 15 * * *'     # 15:00 UTC
   workflow_dispatch: # allows manual trigger
 
 jobs:
@@ -38,10 +40,10 @@ jobs:
 
       - name: Decode Google credentials
         env:
-            GOOGLE_CREDS_BASE64: ${{ secrets.GOOGLE_CREDS_BASE64 }}
-            GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/service_account.json
+          GOOGLE_CREDS_BASE64: ${{ secrets.GOOGLE_CREDS_BASE64 }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/service_account.json
         run: |
-            echo "$GOOGLE_CREDS_BASE64" | base64 --decode > service_account.json
+          echo "$GOOGLE_CREDS_BASE64" | base64 --decode > service_account.json
 
       # 5️⃣ Validate .env and service_account.json
       - name: Validate environment files
@@ -63,5 +65,5 @@ jobs:
       - name: Run Closing.py
         run: python Closing.py
 
-      - name: Current_Stock.py
+      - name: Run Current_Stock.py
         run: python Current_Stock.py
