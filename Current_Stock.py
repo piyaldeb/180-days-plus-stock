@@ -4,8 +4,7 @@ import re
 import logging
 import sys
 import os
-from datetime import date, datetime, timedelta
-
+from datetime import date, datetime
 import gspread
 from gspread_dataframe import set_with_dataframe
 from google.oauth2 import service_account
@@ -29,7 +28,7 @@ COMPANIES = {
 }
 
 today = date.today()
-yesterday = today - timedelta(days=1)
+
 # ========= GITHUB ENV ==========
 FROM_DATE = os.getenv("FROM_DATE")  # from GitHub Actions
 TO_DATE = os.getenv("TO_DATE")      # from GitHub Actions
