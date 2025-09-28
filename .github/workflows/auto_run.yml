@@ -1,14 +1,12 @@
 name: Run Python Scripts Multiple Times Daily
 
-# Schedule to run at 3 AM, 11:50 AM, and 3 PM UTC
 on:
   schedule:
     - cron: '0 3 * * *'      # 03:00 UTC
     - cron: '50 11 * * *'    # 11:50 UTC
+    - cron: '10 12 * * *'    # 12:10 UTC
     - cron: '0 15 * * *'     # 15:00 UTC
-    - cron : 10 12 * * *
-
-  workflow_dispatch: # allows manual trigger
+  workflow_dispatch:          # allows manual trigger
 
 jobs:
   run-python-scripts:
@@ -40,6 +38,7 @@ jobs:
           echo "ODOO_PASSWORD=${{ secrets.ODOO_PASSWORD }}" >> .env
           echo "GOOGLE_CREDS_BASE64=${{ secrets.GOOGLE_CREDS_BASE64 }}" >> .env
 
+      # 5️⃣ Decode Google credentials
       - name: Decode Google credentials
         env:
           GOOGLE_CREDS_BASE64: ${{ secrets.GOOGLE_CREDS_BASE64 }}
@@ -47,7 +46,7 @@ jobs:
         run: |
           echo "$GOOGLE_CREDS_BASE64" | base64 --decode > service_account.json
 
-      # 5️⃣ Validate .env and service_account.json
+      # 6️⃣ Validate environment files
       - name: Validate environment files
         run: |
           if [ ! -f ".env" ]; then
@@ -63,7 +62,7 @@ jobs:
             echo "service_account.json is malformed!"; exit 1;
           fi
 
-      # 6️⃣ Run your Python scripts
+      # 7️⃣ Run your Python scripts
       - name: Run Closing.py
         run: python Closing.py
 
