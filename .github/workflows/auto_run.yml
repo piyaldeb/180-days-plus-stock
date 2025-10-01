@@ -2,34 +2,30 @@ name: Run Python Scripts Multiple Times Daily
 
 on:
   schedule:
-    - cron: '0 3 * * *'      # 03:00 UTC
-    - cron: '50 11 * * *'    # 11:50 UTC
-    - cron: '10 12 * * *'    # 12:10 UTC
-    - cron: '0 15 * * *'     # 15:00 UTC
-  workflow_dispatch:          # allows manual trigger
+    - cron: '0 21 * * *'      # 03:00 AM BDT → 21:00 UTC (previous day)
+    - cron: '50 5 * * *'      # 11:50 AM BDT → 05:50 UTC
+    - cron: '10 6 * * *'      # 12:10 PM BDT → 06:10 UTC
+    - cron: '0 9 * * *'       # 03:00 PM BDT → 09:00 UTC
+  workflow_dispatch:          # manual trigger
 
 jobs:
   run-python-scripts:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout the repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Set up Python
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install requests pandas python-dotenv pytz gspread gspread-dataframe google-auth openpyxl
 
-      # 4️⃣ Create .env file from secrets
       - name: Create .env
         run: |
           echo "ODOO_URL=${{ secrets.ODOO_URL }}" >> .env
@@ -38,7 +34,6 @@ jobs:
           echo "ODOO_PASSWORD=${{ secrets.ODOO_PASSWORD }}" >> .env
           echo "GOOGLE_CREDS_BASE64=${{ secrets.GOOGLE_CREDS_BASE64 }}" >> .env
 
-      # 5️⃣ Decode Google credentials
       - name: Decode Google credentials
         env:
           GOOGLE_CREDS_BASE64: ${{ secrets.GOOGLE_CREDS_BASE64 }}
@@ -46,7 +41,6 @@ jobs:
         run: |
           echo "$GOOGLE_CREDS_BASE64" | base64 --decode > service_account.json
 
-      # 6️⃣ Validate environment files
       - name: Validate environment files
         run: |
           if [ ! -f ".env" ]; then
@@ -62,7 +56,6 @@ jobs:
             echo "service_account.json is malformed!"; exit 1;
           fi
 
-      # 7️⃣ Run your Python scripts
       - name: Run Closing.py
         run: python Closing.py
 
