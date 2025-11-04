@@ -3,6 +3,7 @@ name: Run Python Scripts Multiple Times Daily
 on:
   schedule:
     - cron: '0 21 * * *'      # 03:00 AM BDT → 21:00 UTC (previous day)
+    - cron: '30 3 * * *'      # 09:30 AM BDT → 03:30 UTC (NEW)
     - cron: '50 5 * * *'      # 11:50 AM BDT → 05:50 UTC
     - cron: '10 6 * * *'      # 12:10 PM BDT → 06:10 UTC
     - cron: '0 9 * * *'       # 03:00 PM BDT → 09:00 UTC
