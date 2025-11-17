@@ -62,3 +62,6 @@ jobs:
 
       - name: Run Current_Stock.py
         run: python Current_Stock.py
+
+      - name: Run rm_rejection.py
+        run: python rm_rejection.py
