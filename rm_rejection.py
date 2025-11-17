@@ -121,34 +121,34 @@ def compute_forecast(company_id, wizard_id):
 def fetch_opening_closing(company_id, cname):
     context = {"allowed_company_ids": [company_id], "company_id": company_id}
 
-    # Updated specification with new fields
+    # Specification based on API field structure
     specification = {
+        "parent_category": {"fields": {"display_name": {}}},    # Product
         "product_category": {"fields": {"display_name": {}}},   # Category
         "classification_id": {"fields": {"display_name": {}}},  # Classification
-        "cloing_qty": {},                                       # Closing Quantity
-        "cloing_value": {},                                     # Closing Value
-        "lot_id": {"fields": {"display_name": {}}},             # Invoice
-        "issue_qty": {},                                        # Issue Quantity
-        "issue_value": {},                                      # Issue Value
         "product_id": {"fields": {"display_name": {}}},         # Item
         "pr_code": {},                                          # Item Code
+        "lot_id": {"fields": {"display_name": {}}},             # Invoice
+        "receive_date": {},                                     # Receive Date
+        "pur_price": {},                                        # Pur Price
         "landed_cost": {},                                      # Landed Cost
+        "lot_price": {},                                        # Price
+        "product_uom": {"fields": {"display_name": {}}},        # Unit
         "opening_qty": {},                                      # Opening Quantity
         "opening_value": {},                                    # Opening Value
-        "po_type": {},                                          # Po Type
-        "lot_price": {},                                        # Price
-        "parent_category": {"fields": {"display_name": {}}},    # Product
-        "pur_price": {},                                        # Pur Price
-        "receive_date": {},                                     # Receive Date
         "receive_qty": {},                                      # Receive Quantity
         "receive_value": {},                                    # Receive Value
+        "issue_qty": {},                                        # Issue Quantity
+        "issue_value": {},                                      # Issue Value
+        "cloing_qty": {},                                       # Closing Quantity
+        "cloing_value": {},                                     # Closing Value
+        "po_type": {},                                          # Po Type
         "rejected": {},                                         # Rejected
         "shipment_mode": {},                                    # Shipment Mode
-        "product_uom": {"fields": {"display_name": {}}},        # Unit
         "partner_id": {"fields": {"display_name": {}}},         # Vendor
         "po_number": {},                                        # PO
-        "product_type": {"fields": {"display_name": {}}},                                     # Product Type
-        "item_category": {"fields": {"display_name": {}}},                                    # Item Type
+        "product_type": {"fields": {"display_name": {}}},       # Product Type
+        "item_category": {"fields": {"display_name": {}}},      # Item Type
     }
 
     payload = {
@@ -287,13 +287,13 @@ if __name__ == "__main__":
                 log.info(f"📂 Saved locally: {local_file}")
 
                 # Sheet key for both companies
-                sheet_key = "1j37Y6g3pnMWtwe2fjTe1JTT32aRLS0Z1YPjl3v657Cc"
+                sheet_key = "1xsFwoyqCFOGkMDmTDaXqgxXVhaXAeU0X61YcAgaVrtc"
 
                 # Worksheet name based on company
                 if cid == 1:
-                    worksheet_name = "Current Stock report"
+                    worksheet_name = "Zip_Vendor_wise_Rejection_RAW"
                 elif cid == 3:
-                    worksheet_name = "Current Stock - MT"
+                    worksheet_name = "MT_Vendor_wise_Rejection_RAW"
                 else:
                     worksheet_name = cname
 
