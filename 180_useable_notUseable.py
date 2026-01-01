@@ -248,6 +248,14 @@ if __name__ == "__main__":
     login()
     for cid, cname in COMPANIES.items():
         if switch_company(cid):
+            # Create and compute ageing wizard first
+            try:
+                wizard_id = create_ageing_wizard(cid)
+                compute_ageing(cid, wizard_id)
+            except Exception as e:
+                log.error(f"❌ Failed to create/compute ageing wizard for {cname}: {e}")
+                continue
+            
             df = fetch_ageing(cid, cname)
 
             if not df.empty:
@@ -260,3 +268,5 @@ if __name__ == "__main__":
                 sheet_key = "1j37Y6g3pnMWtwe2fjTe1JTT32aRLS0Z1YPjl3v657Cc"
                 worksheet_name = "unusable_zip" if cid == 1 else "unusable_MT"
                 paste_to_google_sheet(df, sheet_key=sheet_key, worksheet_name=worksheet_name)
+            else:
+                log.warning(f"⚠️ No data fetched for {cname}")
