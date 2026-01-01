@@ -65,3 +65,6 @@ jobs:
 
       - name: Run rm_rejection.py
         run: python rm_rejection.py
+
+      - name: Run 180_useable_notUseable.py
+        run: python 180_useable_notUseable.py
