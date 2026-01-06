@@ -220,6 +220,11 @@ def paste_to_google_sheet(df, sheet_key, worksheet_name):
         log.warning("DataFrame empty. Skipping Google Sheet update.")
         return
 
+    # Check if service account file exists
+    if not os.path.exists("service_account.json"):
+        log.warning("⚠️ service_account.json not found. Skipping Google Sheet update (data saved locally).")
+        return
+
     try:
         scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
         creds = service_account.Credentials.from_service_account_file("service_account.json", scopes=scope)
@@ -256,14 +261,7 @@ if __name__ == "__main__":
     login()
     for cid, cname in COMPANIES.items():
         if switch_company(cid):
-            # Create and compute ageing wizard first
-            try:
-                wizard_id = create_ageing_wizard(cid)
-                compute_ageing(cid, wizard_id)
-            except Exception as e:
-                log.error(f"❌ Failed to create/compute ageing wizard for {cname}: {e}")
-                continue
-            
+            # Skip wizard creation - directly fetch existing ageing data
             df = fetch_ageing(cid, cname)
 
             if not df.empty:
