@@ -91,7 +91,7 @@ def create_ageing_wizard(company_id):
             "args": [{
                 "report_type": "ageing",
                 "report_for": "rm",
-                "all_iteam_list": [],
+                "all_iteam_list": False,  # Changed from [] to False
                 "from_date": False,
                 "to_date": TO_DATE
             }],
@@ -103,12 +103,15 @@ def create_ageing_wizard(company_id):
 
     data = r.json()
     if "error" in data:
-        log.error(f"❌ Ageing wizard creation failed: {data['error']}")
-        raise Exception(data["error"])
+        error_msg = data['error'].get('data', {}).get('message', str(data['error']))
+        log.error(f"❌ Ageing wizard creation failed: {error_msg}")
+        raise Exception(error_msg)
 
     result = data.get("result")
-    if isinstance(result, list) and len(result) > 0 and "id" in result[0]:
-        wiz_id = result[0]["id"]
+    if isinstance(result, int):
+        wiz_id = result
+    elif isinstance(result, list) and len(result) > 0:
+        wiz_id = result[0] if isinstance(result[0], int) else result[0].get("id")
     else:
         raise Exception(f"Unexpected result format: {result}")
 
@@ -179,10 +182,15 @@ def fetch_ageing(company_id, cname):
         },
     }
 
+    log.info(f"🔍 Fetching ageing data for {cname} (company_id={company_id})...")
     r = session.post(f"{ODOO_URL}/web/dataset/call_kw", json=payload)
     r.raise_for_status()
 
-    records = r.json()["result"]["records"]
+    result = r.json().get("result", {})
+    records = result.get("records", [])
+    total_count = result.get("length", 0)
+
+    log.info(f"📊 {cname}: Found {total_count} total records, fetched {len(records)} records")
 
     # Flatten nested lot_id fields to extract display_name and unusable separately
     def flatten(record):
@@ -206,7 +214,7 @@ def fetch_ageing(company_id, cname):
     if "id" in df.columns:
         df.drop(columns=["id"], inplace=True)
 
-    log.info(f"📊 {cname}: {len(df)} rows fetched (ageing report)")
+    log.info(f"📊 {cname}: {len(df)} rows in final dataframe")
     return df
 
 
@@ -216,10 +224,6 @@ def fetch_ageing(company_id, cname):
 
 # ========= PASTE TO GOOGLE SHEETS ==========
 def paste_to_google_sheet(df, sheet_key, worksheet_name):
-    if df.empty:
-        log.warning("DataFrame empty. Skipping Google Sheet update.")
-        return
-
     # Check if service account file exists
     if not os.path.exists("service_account.json"):
         log.warning("⚠️ service_account.json not found. Skipping Google Sheet update (data saved locally).")
@@ -240,16 +244,19 @@ def paste_to_google_sheet(df, sheet_key, worksheet_name):
         log.info(f"🗑️ Clearing existing data in {worksheet_name}...")
         worksheet.clear()
 
-        # Step 2: Paste new data
-        log.info(f"📋 Pasting {len(df)} rows and {len(df.columns)} columns to {worksheet_name}...")
-        set_with_dataframe(worksheet, df, include_index=False, include_column_header=True, resize=True)
+        # Step 2: Paste new data (or skip if empty)
+        if df.empty:
+            log.warning(f"⚠️ No data to paste for {worksheet_name}. Sheet has been cleared.")
+        else:
+            log.info(f"📋 Pasting {len(df)} rows and {len(df.columns)} columns to {worksheet_name}...")
+            set_with_dataframe(worksheet, df, include_index=False, include_column_header=True, resize=True)
 
-        tz = pytz.timezone("Asia/Dhaka")
-        timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
+            tz = pytz.timezone("Asia/Dhaka")
+            timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
 
-        log.info(f"✅ Successfully pasted data to {worksheet_name}")
-        log.info(f"📊 Data shape: {df.shape[0]} rows × {df.shape[1]} columns")
-        log.info(f"🕐 Timestamp: {timestamp}")
+            log.info(f"✅ Successfully pasted data to {worksheet_name}")
+            log.info(f"📊 Data shape: {df.shape[0]} rows × {df.shape[1]} columns")
+            log.info(f"🕐 Timestamp: {timestamp}")
 
     except Exception as e:
         log.error(f"❌ Failed to paste data to Google Sheet '{worksheet_name}': {e}")
@@ -261,18 +268,29 @@ if __name__ == "__main__":
     login()
     for cid, cname in COMPANIES.items():
         if switch_company(cid):
-            # Skip wizard creation - directly fetch existing ageing data
+            # First, try to fetch existing ageing data
             df = fetch_ageing(cid, cname)
 
+            # If no data found, try to create and compute wizard
+            if df.empty:
+                log.warning(f"⚠️ No existing data for {cname}, attempting to generate ageing report...")
+                try:
+                    wizard_id = create_ageing_wizard(cid)
+                    compute_ageing(cid, wizard_id)
+                    # Fetch data again after generating the report
+                    df = fetch_ageing(cid, cname)
+                except Exception as e:
+                    log.error(f"❌ Failed to generate ageing report for {cname}: {e}")
+
+            # Save locally only if there's data
             if not df.empty:
-                # Save locally
                 local_file = os.path.join(DOWNLOAD_DIR, f"{cname.lower().replace(' ', '')}_ageing_{TO_DATE}.xlsx")
                 df.to_excel(local_file, index=False)
                 log.info(f"📂 Saved locally: {local_file}")
-
-                # Google Sheet paste
-                sheet_key = "1j37Y6g3pnMWtwe2fjTe1JTT32aRLS0Z1YPjl3v657Cc"
-                worksheet_name = "unusable_zip" if cid == 1 else "unusable_MT"
-                paste_to_google_sheet(df, sheet_key=sheet_key, worksheet_name=worksheet_name)
             else:
-                log.warning(f"⚠️ No data fetched for {cname}")
+                log.warning(f"⚠️ No data available for {cname}")
+
+            # Always update Google Sheet (will clear if no data)
+            sheet_key = "1j37Y6g3pnMWtwe2fjTe1JTT32aRLS0Z1YPjl3v657Cc"
+            worksheet_name = "unusable_zip" if cid == 1 else "unusable_MT"
+            paste_to_google_sheet(df, sheet_key=sheet_key, worksheet_name=worksheet_name)
