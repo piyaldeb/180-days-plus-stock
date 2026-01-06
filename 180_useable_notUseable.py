@@ -220,27 +220,35 @@ def paste_to_google_sheet(df, sheet_key, worksheet_name):
         log.warning("DataFrame empty. Skipping Google Sheet update.")
         return
 
-    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-    creds = service_account.Credentials.from_service_account_file("service_account.json", scopes=scope)
-    client = gspread.authorize(creds)
-    sheet = client.open_by_key(sheet_key)
-    worksheet = sheet.worksheet(worksheet_name)
+    try:
+        scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+        creds = service_account.Credentials.from_service_account_file("service_account.json", scopes=scope)
+        client = gspread.authorize(creds)
 
-    # Clear only columns A → T (20 columns)
-    worksheet.batch_clear(["A:T"])
+        log.info(f"📝 Opening Google Sheet: {sheet_key}")
+        sheet = client.open_by_key(sheet_key)
 
-    # Paste data
-    set_with_dataframe(worksheet, df)
+        log.info(f"📝 Accessing worksheet: {worksheet_name}")
+        worksheet = sheet.worksheet(worksheet_name)
 
-    tz = pytz.timezone("Asia/Dhaka")
-    timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
+        # Step 1: Clear all existing data first
+        log.info(f"🗑️ Clearing existing data in {worksheet_name}...")
+        worksheet.clear()
 
-    # # Put timestamp in column after last df column (safe up to Z)
-    # last_col_idx = min(26, df.shape[1])  # max 26 (A-Z)
-    # last_col_letter = chr(65 + last_col_idx - 1)
-    # worksheet.update(f"{last_col_letter}2", [[timestamp]])
+        # Step 2: Paste new data
+        log.info(f"📋 Pasting {len(df)} rows and {len(df.columns)} columns to {worksheet_name}...")
+        set_with_dataframe(worksheet, df, include_index=False, include_column_header=True, resize=True)
 
-    log.info(f"✅ Data pasted to {worksheet_name} & timestamp updated: {timestamp}")
+        tz = pytz.timezone("Asia/Dhaka")
+        timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
+
+        log.info(f"✅ Successfully pasted data to {worksheet_name}")
+        log.info(f"📊 Data shape: {df.shape[0]} rows × {df.shape[1]} columns")
+        log.info(f"🕐 Timestamp: {timestamp}")
+
+    except Exception as e:
+        log.error(f"❌ Failed to paste data to Google Sheet '{worksheet_name}': {e}")
+        raise
 
 
 # ========= MAIN SYNC ==========
