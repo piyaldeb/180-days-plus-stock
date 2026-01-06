@@ -1,0 +1,63 @@
+name: Run 180 Useable/Not-Useable Report
+
+on:
+  workflow_dispatch:  # Manual trigger only
+
+jobs:
+  run-180-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pandas python-dotenv pytz gspread gspread-dataframe google-auth openpyxl
+
+      - name: Create .env
+        run: |
+          echo "ODOO_URL=${{ secrets.ODOO_URL }}" >> .env
+          echo "ODOO_DB=${{ secrets.ODOO_DB }}" >> .env
+          echo "ODOO_USERNAME=${{ secrets.ODOO_USERNAME }}" >> .env
+          echo "ODOO_PASSWORD=${{ secrets.ODOO_PASSWORD }}" >> .env
+          echo "GOOGLE_CREDS_BASE64=${{ secrets.GOOGLE_CREDS_BASE64 }}" >> .env
+
+      - name: Decode Google credentials
+        env:
+          GOOGLE_CREDS_BASE64: ${{ secrets.GOOGLE_CREDS_BASE64 }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/service_account.json
+        run: |
+          echo "$GOOGLE_CREDS_BASE64" | base64 --decode > service_account.json
+
+      - name: Validate environment files
+        run: |
+          if [ ! -f ".env" ]; then
+            echo ".env file is missing!"; exit 1;
+          fi
+          if [ ! -s ".env" ]; then
+            echo ".env file is empty!"; exit 1;
+          fi
+          if [ ! -f "service_account.json" ]; then
+            echo "service_account.json is missing!"; exit 1;
+          fi
+          if ! grep -q '"type": "service_account"' service_account.json; then
+            echo "service_account.json is malformed!"; exit 1;
+          fi
+
+      - name: Run 180_useable_notUseable.py
+        run: python 180_useable_notUseable.py
+
+      - name: Upload generated Excel files
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: 180-ageing-reports
+          path: download/*.xlsx
+          retention-days: 7
