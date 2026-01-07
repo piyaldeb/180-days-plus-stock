@@ -35,9 +35,7 @@ session = requests.Session()
 USER_ID = None
 
 today = date.today()
-first_day_this_month = today.replace(day=1)
-last_day_prev_month = first_day_this_month - timedelta(days=1)
-TO_DATE = last_day_prev_month.strftime("%Y-%m-%d")
+TO_DATE = today.strftime("%Y-%m-%d")  # Changed: use today instead of last month
 FROM_DATE = False
 
 DOWNLOAD_DIR = os.path.join(os.getcwd(), "download")
