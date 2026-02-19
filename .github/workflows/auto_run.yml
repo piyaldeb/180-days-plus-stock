@@ -68,3 +68,6 @@ jobs:
 
       - name: Run 180_useable_notUseable.py
         run: python 180_useable_notUseable.py
+
+      - name: Run products_180.py
+        run: python products_180.py

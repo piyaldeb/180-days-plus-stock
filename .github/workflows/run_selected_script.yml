@@ -14,6 +14,7 @@ on:
           - 'Mt_Zip_Ageing.py'
           - 'Mt_Zip_db.py'
           - '180_useable_notUseable.py'
+          - 'products_180.py'
           - 'All Scripts'
 
 jobs:
@@ -72,6 +73,7 @@ jobs:
             python Current_Stock.py
             python rm_rejection.py
             python 180_useable_notUseable.py
+            python products_180.py
           else
             echo "Running ${{ inputs.script }}..."
             python "${{ inputs.script }}"
@@ -82,5 +84,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: generated-reports-${{ github.run_number }}
-          path: download/*.xlsx
+          path: |
+            download/*.xlsx
+            *.xlsx
           retention-days: 7
