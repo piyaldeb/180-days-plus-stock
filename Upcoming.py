@@ -250,6 +250,9 @@ if __name__ == "__main__":
 
             # Push to Google Sheets
             worksheet_name = WORKSHEET_MAP[cid_str]
-            paste_to_sheet(header, data_rows, worksheet_name, cname)
+            try:
+                paste_to_sheet(header, data_rows, worksheet_name, cname)
+            except Exception as e:
+                log.error(f"❌ Sheets upload failed for {cname}: {e}")
         else:
             log.error(f"[ERROR] No upcoming data rows for {cname}")

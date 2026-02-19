@@ -266,7 +266,10 @@ if __name__ == "__main__":
                 log.info(f"[SAVED] {output_file}  ({len(data_rows)} rows)")
 
                 worksheet_name = WORKSHEET_MAP[cid]
-                paste_to_sheet(header1, header2, data_rows, worksheet_name, cname)
+                try:
+                    paste_to_sheet(header1, header2, data_rows, worksheet_name, cname)
+                except Exception as e:
+                    log.error(f"❌ Sheets upload failed for {cname}: {e}")
             else:
                 log.error(f"[ERROR] No data rows for {cname}")
         else:
