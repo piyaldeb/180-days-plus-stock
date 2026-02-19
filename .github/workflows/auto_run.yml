@@ -71,3 +71,6 @@ jobs:
 
       - name: Run products_180.py
         run: python products_180.py
+
+      - name: Run Upcoming.py
+        run: python Upcoming.py

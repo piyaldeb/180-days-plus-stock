@@ -15,6 +15,7 @@ on:
           - 'Mt_Zip_db.py'
           - '180_useable_notUseable.py'
           - 'products_180.py'
+          - 'Upcoming.py'
           - 'All Scripts'
 
 jobs:
@@ -74,6 +75,7 @@ jobs:
             python rm_rejection.py
             python 180_useable_notUseable.py
             python products_180.py
+            python Upcoming.py
           else
             echo "Running ${{ inputs.script }}..."
             python "${{ inputs.script }}"
