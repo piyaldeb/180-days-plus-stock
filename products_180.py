@@ -228,13 +228,14 @@ def paste_to_sheet(header1, header2, data_rows, worksheet_name, cname):
     sheet = client.open_by_key(SHEET_KEY)
     worksheet = sheet.worksheet(worksheet_name)
 
-    # Write header row 1 (month labels)
-    worksheet.update("A1", [header1], value_input_option="RAW")
-    # Write header row 2 (sub-column names)
-    worksheet.update("A2", [header2], value_input_option="RAW")
-    # Write data rows starting from row 3
+    # Row 1 is a custom user title — write starting from row 2
+    # Write month labels to row 2
+    worksheet.update("A2", [header1], value_input_option="RAW")
+    # Write Value/Qty sub-headers to row 3
+    worksheet.update("A3", [header2], value_input_option="RAW")
+    # Write data rows starting from row 4
     if data_rows:
-        worksheet.update("A3", data_rows, value_input_option="USER_ENTERED")
+        worksheet.update("A4", data_rows, value_input_option="USER_ENTERED")
 
     tz = pytz.timezone("Asia/Dhaka")
     timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
