@@ -265,9 +265,8 @@ if __name__ == "__main__":
                 df_out.to_excel(output_file, index=False)
                 log.info(f"[SAVED] {output_file}  ({len(data_rows)} rows)")
 
-                # Google Sheets skipped for local test
-                # worksheet_name = WORKSHEET_MAP[cid]
-                # paste_to_sheet(header1, header2, data_rows, worksheet_name, cname)
+                worksheet_name = WORKSHEET_MAP[cid]
+                paste_to_sheet(header1, header2, data_rows, worksheet_name, cname)
             else:
                 log.error(f"[ERROR] No data rows for {cname}")
         else:
