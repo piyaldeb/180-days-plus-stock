@@ -191,8 +191,8 @@ def transform_to_wide(raw_rows, company_id_str, cname):
     header1 = ["Item Category", "180+",    "180+"]
     header2 = ["",              "Closing", "Utilization"]
     for p in period_labels:
-        header1 += [p,         p]
-        header2 += ["Closing", "Status"]
+        header1 += [p]
+        header2 += ["Current"]
 
     # Build data rows
     data_rows = []
@@ -204,14 +204,10 @@ def transform_to_wide(raw_rows, company_id_str, cname):
         ]
         for p in period_labels:
             try:
-                closing = round(float(pup_closing.loc[(cat, p)]), 4)
-            except KeyError:
-                closing = 0.0
-            try:
                 status = round(float(pup_status.loc[(cat, p)]), 4)
             except KeyError:
                 status = 0.0
-            row += [closing, status]
+            row.append(status)
         data_rows.append(row)
 
     log.info(
