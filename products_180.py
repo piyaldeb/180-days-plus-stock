@@ -182,6 +182,12 @@ def transform_to_wide(result, cname):
         log.warning(f"No data to transform for {cname}")
         return [], [], []
 
+    # Fall back to deriving display labels from raw month dates if API omits them
+    if not month_display:
+        month_display = [
+            datetime.strptime(m[:10], "%Y-%m-%d").strftime("%b %Y") for m in months
+        ]
+
     # Build header rows
     header1 = ["Item Category"]
     header2 = [""]
