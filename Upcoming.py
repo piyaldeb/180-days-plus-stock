@@ -156,10 +156,7 @@ def transform_to_wide(raw_rows, company_id_str, cname):
         log.warning(f"No data for {cname}")
         return [], [], []
 
-    # ---- 180+ bucket ----
-    df_180 = df[df["bucket"] == "180_plus"].copy()
-
-    # ---- Upcoming buckets ----
+    # ---- Upcoming buckets only ----
     df_up = df[df["bucket"].str.startswith("upcoming")].copy()
 
     if df_up.empty:
@@ -175,21 +172,15 @@ def transform_to_wide(raw_rows, company_id_str, cname):
     )
     period_labels = periods_sorted["period"].tolist()
 
-    # All categories (union of 180+ and upcoming)
-    categories = sorted(
-        set(df_180["item_category"].dropna().tolist()) |
-        set(df_up["item_category"].dropna().tolist())
-    )
+    # Unique item categories from upcoming data
+    categories = sorted(df_up["item_category"].dropna().unique())
 
-    # Pivot tables
-    p180_closing     = df_180.groupby("item_category")["closing_value"].sum()
-    p180_utilization = df_180.groupby("item_category")["utilization"].sum()
-    pup_closing      = df_up.groupby(["item_category", "period"])["closing_value"].sum()
-    pup_status       = df_up.groupby(["item_category", "period"])["current_value"].sum()
+    # Pivot table
+    pup_status = df_up.groupby(["item_category", "period"])["current_value"].sum()
 
-    # Build 2-row headers
-    header1 = ["Item Category", "180+",    "180+"]
-    header2 = ["",              "Closing", "Utilization"]
+    # Build 2-row headers (upcoming months only)
+    header1 = ["Item Category"]
+    header2 = [""]
     for p in period_labels:
         header1 += [p]
         header2 += ["Current"]
@@ -197,11 +188,7 @@ def transform_to_wide(raw_rows, company_id_str, cname):
     # Build data rows
     data_rows = []
     for cat in categories:
-        row = [
-            cat,
-            round(float(p180_closing.get(cat,     0.0)), 4),
-            round(float(p180_utilization.get(cat, 0.0)), 4),
-        ]
+        row = [cat]
         for p in period_labels:
             try:
                 status = round(float(pup_status.loc[(cat, p)]), 4)
