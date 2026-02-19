@@ -261,9 +261,14 @@ if __name__ == "__main__":
                 # Save locally to Excel (timestamp with seconds avoids file-lock conflicts)
                 ts = datetime.now().strftime("%Y-%m-%d_%H%M%S")
                 output_file = f"{cname.lower().replace(' ', '_')}_products_{ts}.xlsx"
-                all_rows = [header1, header2] + data_rows
-                df_out = pd.DataFrame(all_rows)
-                df_out.to_excel(output_file, index=False, header=False)
+                from openpyxl import Workbook
+                wb = Workbook()
+                ws = wb.active
+                ws.append(header1)
+                ws.append(header2)
+                for row in data_rows:
+                    ws.append(row)
+                wb.save(output_file)
                 log.info(f"[SAVED] {output_file}  ({len(data_rows)} rows)")
 
                 worksheet_name = WORKSHEET_MAP[cid]
