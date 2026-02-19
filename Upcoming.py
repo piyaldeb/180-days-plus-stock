@@ -137,65 +137,91 @@ def fetch_upcoming_data():
 # ========= TRANSFORM TO WIDE FORMAT ==========
 def transform_to_wide(raw_rows, company_id_str, cname):
     """
-    Filters to upcoming_* buckets for the given company, then pivots:
-      Row: item_category
-      Columns: one per upcoming period (chronologically sorted) showing sum(closing_value)
+    Builds wide format matching original report:
+      Header row 1: Item Category | 180+ | 180+ | Feb-2026 | Feb-2026 | Mar-2026 | Mar-2026 | ...
+      Header row 2: (empty)       | Closing | Utilization | Closing | Status | Closing | Status | ...
+      Data rows   : one per item_category
 
-    Output:
-      header    : ['Item Category', 'Feb-2026', 'Mar-2026', ...]
-      data_rows : [[cat, val1, val2, ...], ...]
+    180+ columns  → sum(closing_value), sum(utilization)
+    Period columns → sum(closing_value) = Closing, sum(current_value) = Status
     """
     if not raw_rows:
         log.warning(f"No raw data to process for {cname}")
-        return [], []
+        return [], [], []
 
     df = pd.DataFrame(raw_rows)
-
-    # Filter: this company + upcoming buckets only (exclude 180_plus)
-    df = df[
-        (df["company_id"].astype(str) == company_id_str) &
-        (df["bucket"].str.startswith("upcoming"))
-    ].copy()
-    log.info(f"{cname}: {len(df)} upcoming rows after filter")
+    df = df[df["company_id"].astype(str) == company_id_str].copy()
 
     if df.empty:
-        log.warning(f"No upcoming data for {cname}")
-        return [], []
+        log.warning(f"No data for {cname}")
+        return [], [], []
 
-    # Parse period as datetime for chronological sort (e.g. "Feb-2026" → 2026-02)
-    df["period_dt"] = pd.to_datetime(df["period"], format="%b-%Y")
+    # ---- 180+ bucket ----
+    df_180 = df[df["bucket"] == "180_plus"].copy()
 
-    # Sorted period labels (oldest → newest = nearest upcoming first)
+    # ---- Upcoming buckets ----
+    df_up = df[df["bucket"].str.startswith("upcoming")].copy()
+
+    if df_up.empty:
+        log.warning(f"No upcoming rows for {cname}")
+        return [], [], []
+
+    # Chronologically sorted upcoming period labels
+    df_up["period_dt"] = pd.to_datetime(df_up["period"], format="%b-%Y")
     periods_sorted = (
-        df[["period_dt", "period"]]
+        df_up[["period_dt", "period"]]
         .drop_duplicates()
         .sort_values("period_dt")
     )
     period_labels = periods_sorted["period"].tolist()
 
-    # Unique item categories sorted alphabetically
-    categories = sorted(df["item_category"].dropna().unique())
+    # All categories (union of 180+ and upcoming)
+    categories = sorted(
+        set(df_180["item_category"].dropna().tolist()) |
+        set(df_up["item_category"].dropna().tolist())
+    )
 
-    # Pivot: sum closing_value per (item_category, period)
-    pivot = df.groupby(["item_category", "period"])["closing_value"].sum()
+    # Pivot tables
+    p180_closing     = df_180.groupby("item_category")["closing_value"].sum()
+    p180_utilization = df_180.groupby("item_category")["utilization"].sum()
+    pup_closing      = df_up.groupby(["item_category", "period"])["closing_value"].sum()
+    pup_status       = df_up.groupby(["item_category", "period"])["current_value"].sum()
 
-    # Build header and data rows
-    header = ["Item Category"] + period_labels
+    # Build 2-row headers
+    header1 = ["Item Category", "180+",    "180+"]
+    header2 = ["",              "Closing", "Utilization"]
+    for p in period_labels:
+        header1 += [p,         p]
+        header2 += ["Closing", "Status"]
+
+    # Build data rows
     data_rows = []
     for cat in categories:
-        row = [cat]
+        row = [
+            cat,
+            round(float(p180_closing.get(cat,     0.0)), 4),
+            round(float(p180_utilization.get(cat, 0.0)), 4),
+        ]
         for p in period_labels:
             try:
-                row.append(round(float(pivot.loc[(cat, p)]), 4))
+                closing = round(float(pup_closing.loc[(cat, p)]), 4)
             except KeyError:
-                row.append(0.0)
+                closing = 0.0
+            try:
+                status = round(float(pup_status.loc[(cat, p)]), 4)
+            except KeyError:
+                status = 0.0
+            row += [closing, status]
         data_rows.append(row)
 
-    log.info(f"📐 {cname}: {len(categories)} categories × {len(period_labels)} upcoming periods → wide table ready")
-    return header, data_rows
+    log.info(
+        f"📐 {cname}: {len(categories)} categories × "
+        f"(180+ + {len(period_labels)} upcoming periods) → wide table ready"
+    )
+    return header1, header2, data_rows
 
 # ========= PASTE TO GOOGLE SHEETS ==========
-def paste_to_sheet(header, data_rows, worksheet_name, cname):
+def paste_to_sheet(header1, header2, data_rows, worksheet_name, cname):
     if not data_rows:
         log.warning(f"⚠️  {cname}: No data rows. Skipping {worksheet_name}.")
         return
@@ -212,8 +238,9 @@ def paste_to_sheet(header, data_rows, worksheet_name, cname):
     worksheet = sheet.worksheet(worksheet_name)
 
     worksheet.batch_clear(["A:ZZ"])
-    worksheet.update("A1", [header], value_input_option="RAW")
-    worksheet.update("A2", data_rows, value_input_option="USER_ENTERED")
+    worksheet.update("A1", [header1], value_input_option="RAW")
+    worksheet.update("A2", [header2], value_input_option="RAW")
+    worksheet.update("A3", data_rows,  value_input_option="USER_ENTERED")
 
     tz = pytz.timezone("Asia/Dhaka")
     timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
@@ -238,20 +265,23 @@ if __name__ == "__main__":
             log.error(f"❌ Skipping {cname} — company switch failed")
             continue
 
-        header, data_rows = transform_to_wide(raw_rows, cid_str, cname)
+        header1, header2, data_rows = transform_to_wide(raw_rows, cid_str, cname)
 
         if data_rows:
-            # Save locally to Excel
+            # Save locally to Excel (header1 as columns, header2 + data as rows)
             ts = datetime.now().strftime("%Y-%m-%d_%H%M%S")
             output_file = f"{cname.lower().replace(' ', '_')}_upcoming_{ts}.xlsx"
-            df_out = pd.DataFrame(data_rows, columns=header)
+            col_names = header1[:]
+            col_names[0] = "Item Category"
+            all_rows = [header2] + data_rows
+            df_out = pd.DataFrame(all_rows, columns=col_names)
             df_out.to_excel(output_file, index=False)
             log.info(f"[SAVED] {output_file}  ({len(data_rows)} rows)")
 
             # Push to Google Sheets
             worksheet_name = WORKSHEET_MAP[cid_str]
             try:
-                paste_to_sheet(header, data_rows, worksheet_name, cname)
+                paste_to_sheet(header1, header2, data_rows, worksheet_name, cname)
             except Exception as e:
                 log.error(f"❌ Sheets upload failed for {cname}: {e}")
         else:
