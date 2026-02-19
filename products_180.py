@@ -222,9 +222,6 @@ def paste_to_sheet(header1, header2, data_rows, worksheet_name, cname):
     sheet = client.open_by_key(SHEET_KEY)
     worksheet = sheet.worksheet(worksheet_name)
 
-    # Clear existing content
-    worksheet.batch_clear(["A:ZZ"])
-
     # Write header row 1 (month labels)
     worksheet.update("A1", [header1], value_input_option="RAW")
     # Write header row 2 (sub-column names)

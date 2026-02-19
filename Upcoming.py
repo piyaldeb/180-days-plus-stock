@@ -220,7 +220,6 @@ def paste_to_sheet(header1, header2, data_rows, worksheet_name, cname):
     sheet  = client.open_by_key(SHEET_KEY)
     worksheet = sheet.worksheet(worksheet_name)
 
-    worksheet.batch_clear(["A:ZZ"])
     worksheet.update("A1", [header1], value_input_option="RAW")
     worksheet.update("A2", [header2], value_input_option="RAW")
     worksheet.update("A3", data_rows,  value_input_option="USER_ENTERED")
