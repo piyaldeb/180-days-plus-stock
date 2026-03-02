@@ -31,9 +31,7 @@ today = date.today()
 
 # ========= GITHUB ENV ==========
 FROM_DATE = os.getenv("FROM_DATE")  # from GitHub Actions
-TO_DATE = date.today().strftime("%Y-%m-%d")
-if not TO_DATE:
-    TO_DATE = today.isoformat()
+TO_DATE = os.getenv("CURRENT_DATE") or date.today().strftime("%Y-%m-%d")
 if not FROM_DATE:
     FROM_DATE = False  # keep False if wizard supports it
 

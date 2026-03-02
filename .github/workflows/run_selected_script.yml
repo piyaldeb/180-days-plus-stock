@@ -17,6 +17,31 @@ on:
           - 'products_180.py'
           - 'Upcoming.py'
           - 'All Scripts'
+      closing_month:
+        description: 'Closing.py — select month (last day used as TO_DATE). "auto" = previous month.'
+        required: false
+        type: choice
+        options:
+          - 'auto'
+          - '2026-03'
+          - '2026-02'
+          - '2026-01'
+          - '2025-12'
+          - '2025-11'
+          - '2025-10'
+          - '2025-09'
+          - '2025-08'
+          - '2025-07'
+          - '2025-06'
+          - '2025-05'
+          - '2025-04'
+          - '2025-03'
+          - '2025-02'
+          - '2025-01'
+      current_date:
+        description: 'Current_Stock.py — as-of date (YYYY-MM-DD). Leave blank for today.'
+        required: false
+        type: string
 
 jobs:
   run-selected-script:
@@ -64,6 +89,23 @@ jobs:
           fi
           if ! grep -q '"type": "service_account"' service_account.json; then
             echo "service_account.json is malformed!"; exit 1;
+          fi
+
+      - name: Resolve date inputs
+        run: |
+          CLOSING_MONTH="${{ inputs.closing_month }}"
+          if [ -n "$CLOSING_MONTH" ] && [ "$CLOSING_MONTH" != "auto" ]; then
+            YEAR=$(echo "$CLOSING_MONTH" | cut -d'-' -f1)
+            MONTH=$(echo "$CLOSING_MONTH" | cut -d'-' -f2)
+            LAST_DAY=$(date -d "${YEAR}-${MONTH}-01 +1 month -1 day" +%Y-%m-%d)
+            echo "TO_DATE=$LAST_DAY" >> $GITHUB_ENV
+            echo "Closing TO_DATE resolved to: $LAST_DAY"
+          fi
+
+          CURRENT_DATE_INPUT="${{ inputs.current_date }}"
+          if [ -n "$CURRENT_DATE_INPUT" ]; then
+            echo "CURRENT_DATE=$CURRENT_DATE_INPUT" >> $GITHUB_ENV
+            echo "Current stock date set to: $CURRENT_DATE_INPUT"
           fi
 
       - name: Run selected script
